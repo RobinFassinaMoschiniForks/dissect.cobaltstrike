@@ -309,6 +309,12 @@ class DnsBeaconBlock(ConfigBlock):
     __name__ = "dns_beacon"
 
 
+class HttpBeaconBlock(ConfigBlock):
+    """`.http-beacon` block"""
+
+    __name__ = "http_beacon"
+
+
 class ExecuteOptionsBlock(ConfigBlock):
     """`.process-inject.execute` block"""
 
@@ -347,6 +353,50 @@ class ExecuteOptionsBlock(ConfigBlock):
                     block._enable(option.lower().replace("-", "_"), True)
                 else:
                     raise ValueError(f"Unknown option: {option}")
+        return block
+
+
+class BeaconGateBlock(ConfigBlock):
+    """`.stage.beacon_gate` block"""
+
+    __name__ = "BeaconGateBlock"
+
+    none = ConfigBlock._enable
+    comms = ConfigBlock._enable
+    core = ConfigBlock._enable
+    cleanup = ConfigBlock._enable
+    all = ConfigBlock._enable
+    internetopena = ConfigBlock._enable
+    internetconnecta = ConfigBlock._enable
+    virtualalloc = ConfigBlock._enable
+    virtualallocex = ConfigBlock._enable
+    virtualprotect = ConfigBlock._enable
+    virtualprotextex = ConfigBlock._enable
+    virtualfree = ConfigBlock._enable
+    getthreadcontext = ConfigBlock._enable
+    setthreadcontext = ConfigBlock._enable
+    resumethread = ConfigBlock._enable
+    createthread = ConfigBlock._enable
+    createremotethread = ConfigBlock._enable
+    openprocess = ConfigBlock._enable
+    openthread = ConfigBlock._enable
+    closehandle = ConfigBlock._enable
+    createfilemappinga = ConfigBlock._enable
+    mapviewoffile = ConfigBlock._enable
+    unmapviewoffile = ConfigBlock._enable
+    virtualquery = ConfigBlock._enable
+    duplicatehandle = ConfigBlock._enable
+    readprocessmemory = ConfigBlock._enable
+    writeprocessmemory = ConfigBlock._enable
+    exitthread = ConfigBlock._enable
+
+    @classmethod
+    def from_beacon_gate_option_strings(cls, options: list[str]):
+        block = cls()
+
+        for option in options:
+            block._enable(option.lower(), True)
+
         return block
 
 
@@ -402,6 +452,7 @@ class C2Profile(ConfigBlock):
         http_post_client = HttpOptionsBlock()
         proc_inj = ProcessInjectBlock()
         dns_beacon = DnsBeaconBlock()
+        http_beacon = HttpBeaconBlock()
         # http_get_server = HttpOptionsBlock()
 
         for setting, value in config.settings_by_index.items():
@@ -622,6 +673,13 @@ class C2Profile(ConfigBlock):
                 proc_inj.set_option("bof_reuse_memory", "true")
             elif setting == BeaconSetting.SETTING_BOF_ALLOCATOR:
                 proc_inj.set_option("bof_allocator", value)
+            elif setting == BeaconSetting.SETTING_DATA_STORE_SIZE:
+                stage.set_option("data_store_size", value)
+            elif setting == BeaconSetting.SETTING_HTTP_DATA_REQUIRED and value:
+                http_beacon.set_option("data_required", "true")
+            elif setting == BeaconSetting.SETTING_BEACON_GATE and value:
+                block = BeaconGateBlock.from_beacon_gate_option_strings(value)
+                stage.set_config_block("beacon_gate", block)
 
         if c2_recover:
             http_get.set_non_empty_config_block("server", HttpOptionsBlock(output=DataTransformBlock(steps=c2_recover)))
@@ -632,6 +690,7 @@ class C2Profile(ConfigBlock):
         profile.set_non_empty_config_block("stage", stage)
         profile.set_non_empty_config_block("process_inject", proc_inj)
         profile.set_non_empty_config_block("dns_beacon", dns_beacon)
+        profile.set_non_empty_config_block("http_beacon", http_beacon)
         return profile
 
     def __str__(self) -> str:

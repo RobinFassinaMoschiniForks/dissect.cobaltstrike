@@ -298,6 +298,39 @@ def test_c2profile_v48():
     assert profile.properties["stage.syscall_method"] == ["direct"]
 
 
+def test_c2profile_v49():
+    c2profile_fragment = """
+    stage {
+        set data_store_size "1024";
+    }
+    """
+    profile = c2profile.C2Profile.from_text(c2profile_fragment)
+    assert profile.properties["stage.data_store_size"] == ["1024"]
+
+
+def test_c2profile_v410():
+    c2profile_fragment = """
+    stage {
+        beacon_gate {
+            All;
+        }
+    }
+    """
+    profile = c2profile.C2Profile.from_text(c2profile_fragment)
+    assert profile.properties["stage.beacon_gate"] == ["All"]
+
+    c2profile_fragment = """
+    stage {
+        beacon_gate {
+            VirtualAlloc;
+            WriteProcessMemory;
+        }
+    }
+    """
+    profile = c2profile.C2Profile.from_text(c2profile_fragment)
+    assert profile.properties["stage.beacon_gate"] == ["VirtualAlloc", "WriteProcessMemory"]
+
+
 @pytest.mark.parametrize(
     ("allocator_enum", "bof_allocator"),
     [
@@ -338,3 +371,49 @@ def test_c2profile_bof_reuse_memory(bof_reuse_memory):
         assert profile.properties["process-inject.bof_reuse_memory"] == ["true"]
     else:
         assert "project.inject.bof_reuse_memory" not in profile.properties
+
+
+def test_c2profile_beacon_gate():
+    # beacon gate with all options
+    data = beacon.Setting(
+        index=beacon.BeaconSetting.SETTING_BEACON_GATE,
+        type=beacon.SettingsType.TYPE_PTR,
+        length=0x40,
+        value=b"\x01" * 0x40,
+    ).dumps()
+    bconfig = beacon.BeaconConfig(data)
+    profile = c2profile.C2Profile.from_beacon_config(bconfig)
+    assert profile.properties["stage.beacon_gate"] == ["All"]
+
+    # empty beacon gate should not result into any profile setting
+    data = beacon.Setting(
+        index=beacon.BeaconSetting.SETTING_BEACON_GATE,
+        type=beacon.SettingsType.TYPE_PTR,
+        length=0x40,
+        value=b"\x00" * 0x40,
+    ).dumps()
+    bconfig = beacon.BeaconConfig(data)
+    profile = c2profile.C2Profile.from_beacon_config(bconfig)
+    assert "stage.beacon_gate" not in profile.properties
+
+
+@pytest.mark.parametrize(
+    ("http_data_required",),
+    [
+        (True,),
+        (False,),
+    ],
+)
+def test_c2profile_http_data_required(http_data_required: bool):
+    data = beacon.Setting(
+        index=beacon.BeaconSetting.SETTING_HTTP_DATA_REQUIRED,
+        type=beacon.SettingsType.TYPE_SHORT,
+        length=0x2,
+        value=beacon.cs_struct.uint16(http_data_required).dumps(),
+    ).dumps()
+    bconfig = beacon.BeaconConfig(data)
+    profile = c2profile.C2Profile.from_beacon_config(bconfig)
+    if not http_data_required:
+        assert "http-beacon.data_required" not in profile.properties
+    else:
+        assert profile.properties["http-beacon.data_required"] == ["true"]

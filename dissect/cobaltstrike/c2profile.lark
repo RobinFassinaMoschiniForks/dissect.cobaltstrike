@@ -11,6 +11,7 @@ start: value*
     | "process-inject" "{" process_inject_options* "}"                  -> process_inject
     | "post-ex" "{" postex_options* "}"                                 -> post_ex
     | "dns-beacon" "{" dns_beacon_options* "}"                          -> dns_beacon
+    | "http-beacon" "{" http_beacon_options* "}"                        -> http_beacon
 
 OPTION: "sample_name"
     | "data_jitter"
@@ -137,6 +138,8 @@ stage_options: "string" string ";"                  -> string
     | "set" "rich_header" string ";"                -> rich_header
     | "set" "checksum" string ";"                   -> checksum
     | "set" "syscall_method" string ";"             -> syscall_method           // introduced in Cobalt Strike 4.8
+    | "set" "data_store_size" string ";"            -> data_store_size          // introduced in Cobalt Strike 4.9
+    | "beacon_gate" "{" beacon_gate_options* "}"    -> beacon_gate              // introduced in Cobalt Strike 4.10
 
 process_inject_options: "set" "allocator" string ";"    -> allocator
     | "set" "min_alloc" string ";"                      -> min_alloc
@@ -157,6 +160,35 @@ execute_options: "CreateThread" string ";"  -> createthread_special
     | "NtQueueApcThread-s" ";"              -> ntqueueapcthread_s
     | "RtlCreateUserThread" ";"             -> rtlcreateuserthread
     | "SetThreadContext" ";"                -> setthreadcontext
+
+beacon_gate_options: "None" ";"             -> none
+    | "Comms" ";"                           -> comms
+    | "Core" ";"                            -> core
+    | "Cleanup" ";"                         -> cleanup
+    | "All" ";"                             -> all
+    | "InternetOpenA" ";"                   -> internetopena
+    | "InternetConnectA" ";"                -> internetconnecta
+    | "VirtualAlloc" ";"                    -> virtualalloc
+    | "VirtualAllocEx" ";"                  -> virtualallocex
+    | "VirtualProtect" ";"                  -> virtualprotect
+    | "VirtualProtectEx" ";"                -> virtualprotextex
+    | "VirtualFree" ";"                     -> virtualfree
+    | "GetThreadContext" ";"                -> getthreadcontext
+    | "SetThreadContext" ";"                -> setthreadcontext
+    | "ResumeThread" ";"                    -> resumethread
+    | "CreateThread" ";"                    -> createthread
+    | "CreateRemoteThread" ";"              -> createremotethread
+    | "OpenProcess" ";"                     -> openprocess
+    | "OpenThread" ";"                      -> openthread
+    | "CloseHandle" ";"                     -> closehandle
+    | "CreateFileMappingA" ";"              -> createfilemappinga
+    | "MapViewOfFile" ";"                   -> mapviewoffile
+    | "UnmapViewOfFile" ";"                 -> unmapviewoffile
+    | "VirtualQuery" ";"                    -> virtualquery
+    | "DuplicateHandle" ";"                 -> duplicatehandle
+    | "ReadProcessMemory" ";"               -> readprocessmemory
+    | "WriteProcessMemory" ";"              -> writeprocessmemory
+    | "ExitThread" ";"                      -> exitthread
 
 postex_options: "set" "spawnto_x86" string ";"  -> spawnto_x86
     | "set" "spawnto_x64" string ";"            -> spawnto_x64
@@ -182,6 +214,10 @@ dns_beacon_options: "set" "dns_idle" string ";" -> dns_idle
     | "set" "put_output" string ";"             -> put_output
     | "set" "ns_response" string ";"            -> ns_response
     | "#" "dns_resolver" string ";"             -> comment_dns_resolver
+
+http_beacon_options: "set" "library" string ";" -> library              // introduced in Cobalt Strike 4.9
+    | "set" "data_required" string ";"          -> data_required        // introduced in Cobalt Strike 4.10
+    | "set" "data_required_length" string ";"   -> data_required_length // introduced in Cobalt Strike 4.10
 
 header: string
 string: STRING
